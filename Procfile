@@ -1,1 +1,1 @@
-web: gunicorn mapbox:server
+web: gunicorn mapboxdash:server
