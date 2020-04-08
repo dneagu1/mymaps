@@ -9,6 +9,7 @@ import os
 import plotly.express as px
 import plotly.offline as py
 import plotly.graph_objs as go
+import flask
 
 
 mapbox_access_token = 'pk.eyJ1IjoiZGJvc3RvbmMiLCJhIjoiY2p3NWhibWcxMXN2bjQzcXFmdmZhejBrcyJ9.4yN_W6nIO8TlXX9_vWq1qw'
@@ -17,9 +18,9 @@ mapbox_access_token = 'pk.eyJ1IjoiZGJvc3RvbmMiLCJhIjoiY2p3NWhibWcxMXN2bjQzcXFmdm
 banks = pd.read_csv(os.getcwd() + '/sample.csv')
 top_banks = banks.groupby('namefull')[['rssdhcr']].count().reset_index().sort_values(by='rssdhcr')['namefull'].tolist()[-10:]
 banks = banks[(banks['namefull'].isin(top_banks))].reset_index(drop=True)
+server = flask.Flask(__name__)
+app = dash.Dash(__name__, server=server)
 
-app = dash.Dash(__name__)
-server=app.server
 app.layout = html.Div([
 #     html.Div([
 #         html.Div([
@@ -101,4 +102,5 @@ def update_figure(chosen_bank):
 #             return 'No Website Available'
 #         else:
 #             return html.A(the_link,href=the_link,target="_blank")
-app.run_server(debug=True)
+if __name__ == '__main__':
+    app.run_server(debug=True)
