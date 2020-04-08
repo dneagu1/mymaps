@@ -19,6 +19,7 @@ top_banks = banks.groupby('namefull')[['rssdhcr']].count().reset_index().sort_va
 banks = banks[(banks['namefull'].isin(top_banks))].reset_index(drop=True)
 
 app = dash.Dash(__name__)
+server=app.server
 app.layout = html.Div([
 #     html.Div([
 #         html.Div([
