@@ -10,62 +10,72 @@ import plotly.express as px
 import plotly.offline as py
 import plotly.graph_objs as go
 import flask
+import random
+
+import sys
 
 
 mapbox_access_token = 'pk.eyJ1IjoiZGJvc3RvbmMiLCJhIjoiY2p3NWhibWcxMXN2bjQzcXFmdmZhejBrcyJ9.4yN_W6nIO8TlXX9_vWq1qw'
 
 
-banks = pd.read_csv(os.getcwd() + '/sample.csv')
-top_banks = banks.groupby('namefull')[['rssdhcr']].count().reset_index().sort_values(by='rssdhcr')['namefull'].tolist()[-10:]
-banks = banks[(banks['namefull'].isin(top_banks))].reset_index(drop=True)
+
+banks = pd.read_csv(os.getcwd() + '/2019banks.csv')
+bank_color = {}
+for bank in banks['namefull'].unique():
+    bank_color.update({bank:np.random.rand()})
+banks['zcta5_firm_specific'] = banks['namefull'].map(bank_color)
+
+for col in banks.columns.values:
+    if 'zcta5_' in col:
+        banks[col] = banks[col].fillna(0).astype(float)
+        banks[col+'scaled'] = (banks[col]-banks[col].mean())/banks[col].std()
+        banks[col+'scaled'] = np.where(banks[col+'scaled']>1,1,np.where(banks[col+'scaled']<-1,-1,banks[col+'scaled']))
+
 server = flask.Flask(__name__)
 app = dash.Dash(__name__, server=server)
 
 app.layout = html.Div([
-#     html.Div([
-#         html.Div([
-#             html.Label(children=['Bank: ']),
-# #             style=blackbold
-            dcc.Checklist(id='bank_name',
+
+            dcc.Dropdown(id='bank_name',
                          options=[{'label':str(b),'value':b} for b in sorted(banks['namefull'].unique())],
-                         value=[b for b in sorted(banks['namefull'].unique())],
+                         # value=[b for b in sorted(banks['namefull'].unique())],
+                         value=[banks['namefull'].unique()[0]],
+                         multi=True
 #                           value=None,
                          ),
-#             html.Br(),
-#             html.Label(['Website:']),
-# #             style=blackbold
-#             html.Pre(id='web_link',children=[],
-#                     style={'white-space':'pre-wrap','word-break':'break-all',
-#                           'border':'1px solid black','text-align':'center',
-#                           'padding':'12px 12px 12px 12px','color':'blue',
-#                           'margin-top':'3px'}
-#                     ),
-#         ],className='three columns'
-#         ),
-#         html.Div([
+            dcc.Dropdown(id='demo_name',
+                         options=[{'label':str(c).replace('zcta5_',''),'value':c} for c in [col for col in banks.columns.values if 'zcta5_' in col and 'scaled' not in col]],
+                         # value=[b for b in sorted(banks['namefull'].unique())],
+                         value=[col for col in banks.columns.values if 'zcta5_' in col and 'scaled' not in col],
+                         multi=False
+                         ),
             dcc.Graph(id='graph-banks'
             ,config={'displayModeBar':False,'scrollZoom':True},
              style={'background':'#00FC87','padding-bottom':'2px','padding-left':'2px','height':'100vh'}
              )
-#         ],className='nine columns'
-#         ),
-#     ],className='row'
-#     ),
-# ],className='ten columns offset-by-one'
+
 ])
 
 @app.callback(Output('graph-banks','figure'),
-            [Input('bank_name','value')])
+            [Input('bank_name','value'),Input('demo_name','value')])
 
-def update_figure(chosen_bank):
+def update_figure(chosen_bank,demo_name):
     df_sub = banks[(banks['namefull'].isin(chosen_bank))]
     locations = [go.Scattermapbox(
         lon = df_sub['sims_longitude'],
         lat = df_sub['sims_latitude'],
         mode='markers',
-        marker={'color':'black'},
+        marker=dict(
+        # size=16,
+        cmax=1,
+        cmin=-1,
+        color=df_sub[demo_name[0]+'scaled' if type(demo_name) is list else demo_name+'scaled'],
+        colorbar=dict(
+            title="Colorbar"),
+        colorscale="Viridis"
+        ),
         hoverinfo='text',
-        hovertext=df_sub['namefull']
+        hovertext=df_sub['namefull'] + '<br>' + str(demo_name[0].replace('zcta5_','') if type(demo_name) is list else demo_name.replace('zcta5_','')) +": " + df_sub[demo_name[0] if type(demo_name) is list else demo_name].map(str)
     )]
     return {
         'data':locations,
@@ -74,8 +84,9 @@ def update_figure(chosen_bank):
             clickmode='event+select',
             hovermode='closest',
             hoverdistance=2,
-            title=dict(text="Bank Zips",font=dict(size=20,color='black')),
+            title=dict(text="Bank Branch Locations",font=dict(size=20,color='black')),
             mapbox=dict(
+                layers=[],
                 accesstoken=mapbox_access_token,
                 bearing=25,
                 style='light',
@@ -83,24 +94,11 @@ def update_figure(chosen_bank):
                     lat=df_sub['sims_latitude'].median(),
                     lon=df_sub['sims_longitude'].median()),
             pitch=40,
-            zoom=11.5,
+            zoom=5,
             # width=1600,
             # height=800
             ),
         )
     }
-# @app.callback(
-#     Output('web_link','children'),
-#     [Input('graph','clickData')])
-#
-# def display_click_data(clickData):
-#     if clickData is None:
-#         return 'Click on any bubble'
-#     else:
-#         the_link = clickData['points'][0]['customdata']
-#         if the_link is None:
-#             return 'No Website Available'
-#         else:
-#             return html.A(the_link,href=the_link,target="_blank")
 if __name__ == '__main__':
     app.run_server(debug=True)
