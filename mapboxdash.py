@@ -21,9 +21,9 @@ mapbox_access_token = 'pk.eyJ1IjoiZGJvc3RvbmMiLCJhIjoiY2p3NWhibWcxMXN2bjQzcXFmdm
 
 banks = pd.read_csv(os.getcwd() + '/2019banks.csv')
 bank_color = {}
-for bank in banks['namefull'].unique():
+for bank in banks['namehcr'].unique():
     bank_color.update({bank:np.random.rand()*random.choice([-1,1])})
-banks['zcta5_firm_specific'] = banks['namefull'].map(bank_color)
+banks['zcta5_firm_specific'] = banks['namehcr'].map(bank_color)
 
 for col in banks.columns.values:
     if 'zcta5_' in col:
@@ -40,15 +40,15 @@ app = dash.Dash(__name__, server=server)
 app.layout = html.Div([
 
             dcc.Dropdown(id='bank_name',
-                         options=[{'label':str(b),'value':b} for b in sorted(banks['namefull'].unique())],
-                         # value=[b for b in sorted(banks['namefull'].unique())],
-                         value=[sorted(banks['namefull'].unique())[0]],
+                         options=[{'label':str(b),'value':b} for b in sorted(banks['namehcr'].unique())],
+                         # value=[b for b in sorted(banks['namehcr'].unique())],
+                         value=[sorted(banks['namehcr'].unique())[0]],
                          multi=True
 #                           value=None,
                          ),
             dcc.Dropdown(id='demo_name',
                          options=[{'label':str(c).replace('zcta5_',''),'value':c} for c in [col for col in banks.columns.values if 'zcta5_' in col and 'scaled' not in col]],
-                         # value=[b for b in sorted(banks['namefull'].unique())],
+                         # value=[b for b in sorted(banks['namehcr'].unique())],
                          value=[col for col in banks.columns.values if 'zcta5_' in col and 'scaled' not in col],
                          multi=False
                          ),
@@ -63,7 +63,7 @@ app.layout = html.Div([
             [Input('bank_name','value'),Input('demo_name','value')])
 
 def update_figure(chosen_bank,demo_name):
-    df_sub = banks[(banks['namefull'].isin(chosen_bank))]
+    df_sub = banks[(banks['namehcr'].isin(chosen_bank))]
     locations = [go.Scattermapbox(
         lon = df_sub['sims_longitude'],
         lat = df_sub['sims_latitude'],
@@ -78,7 +78,7 @@ def update_figure(chosen_bank,demo_name):
         colorscale="Viridis"
         ),
         hoverinfo='text',
-        hovertext=df_sub['namefull'] + '<br>' + str(demo_name[0].replace('zcta5_','') if type(demo_name) is list else demo_name.replace('zcta5_','')) +": " + df_sub[demo_name[0] if type(demo_name) is list else demo_name].map(str)
+        hovertext=df_sub['namehcr'] + '<br>' + str(demo_name[0].replace('zcta5_','') if type(demo_name) is list else demo_name.replace('zcta5_','')) +": " + df_sub[demo_name[0] if type(demo_name) is list else demo_name].map(str)
     )]
     return {
         'data':locations,
