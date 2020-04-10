@@ -22,13 +22,16 @@ mapbox_access_token = 'pk.eyJ1IjoiZGJvc3RvbmMiLCJhIjoiY2p3NWhibWcxMXN2bjQzcXFmdm
 banks = pd.read_csv(os.getcwd() + '/2019banks.csv')
 bank_color = {}
 for bank in banks['namefull'].unique():
-    bank_color.update({bank:np.random.rand()})
+    bank_color.update({bank:np.random.rand()*random.choice([-1,1])})
 banks['zcta5_firm_specific'] = banks['namefull'].map(bank_color)
 
 for col in banks.columns.values:
     if 'zcta5_' in col:
         banks[col] = banks[col].fillna(0).astype(float)
-        banks[col+'scaled'] = (banks[col]-banks[col].mean())/banks[col].std()
+        if 'zcta5_firm_specific' not in col:
+            banks[col+'scaled'] = (banks[col]-banks[col].mean())/banks[col].std()
+        else:
+            banks[col+'scaled'] = banks[col]
         banks[col+'scaled'] = np.where(banks[col+'scaled']>1,1,np.where(banks[col+'scaled']<-1,-1,banks[col+'scaled']))
 
 server = flask.Flask(__name__)
@@ -39,7 +42,7 @@ app.layout = html.Div([
             dcc.Dropdown(id='bank_name',
                          options=[{'label':str(b),'value':b} for b in sorted(banks['namefull'].unique())],
                          # value=[b for b in sorted(banks['namefull'].unique())],
-                         value=[banks['namefull'].unique()[0]],
+                         value=[sorted(banks['namefull'].unique())[0]],
                          multi=True
 #                           value=None,
                          ),
