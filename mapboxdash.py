@@ -19,7 +19,7 @@ mapbox_access_token = 'pk.eyJ1IjoiZGJvc3RvbmMiLCJhIjoiY2p3NWhibWcxMXN2bjQzcXFmdm
 
 
 
-banks = pd.read_csv(os.getcwd() + '/2019banks.csv')
+banks = pd.read_csv(os.getcwd() + '/2019banks2.csv')
 bank_color = {}
 for bank in banks['namehcr'].unique():
     bank_color.update({bank:np.random.rand()*random.choice([-1,1])})
@@ -30,11 +30,12 @@ banks['zcta5_firm_specific'] = banks['namehcr'].map(bank_color)
 keep_cols = ['year', 'namehcr', 'rssdhcr', 'zipbr', 'sims_latitude','sims_longitude',
         'zcta5_totalpop','zcta5_prop_nonwhite', 'zcta5_prop_highschool', 'zcta5_prop_college',
         'zcta5_prop_belowpovl','zcta5_medianhhincome', 'zcta5_prop_govtaid', 'zcta5_percapincome',
-        'zcta5_rate_unemployed','zcta5_firm_specific']
+        'zcta5_rate_unemployed','zcta5_firm_specific','zcta5_depfee_to_revenue']
 banks = banks[keep_cols]
+banks['zcta5_depfee_to_revenue']=banks['zcta5_depfee_to_revenue'].str.rstrip('%').astype('float')/100
 var_dict = {'zcta5_totalpop':'Total  Population','zcta5_prop_nonwhite':'Proportion Minority', 'zcta5_prop_highschool':'Proportion 25+ High School Educated', 'zcta5_prop_college':'Proportion 25+ College Educated',
 'zcta5_prop_belowpovl':'Proportion of population with income below poverty level','zcta5_medianhhincome':'Median household income over past 12 months', 'zcta5_prop_govtaid':'Proportion of households with cash public assistance or Food Stamps / SNAP', 'zcta5_percapincome':'Per-capita income over past 12 months',
-'zcta5_rate_unemployed':'Proportion of labor force that is unemployed','zcta5_firm_specific':'Firm-specific variable'}
+'zcta5_rate_unemployed':'Proportion of labor force that is unemployed','zcta5_firm_specific':'Firm-specific variable','zcta5_depfee_to_revenue':'Deposit Fee Income/Total Revenue'}
 
 
 
