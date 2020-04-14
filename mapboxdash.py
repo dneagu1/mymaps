@@ -24,7 +24,7 @@ bank_color = {}
 for bank in banks['namehcr'].unique():
     bank_color.update({bank:np.random.rand()*random.choice([-1,1])})
 banks['zcta5_firm_specific'] = banks['namehcr'].map(bank_color)
-
+banks['namehcr'] = banks['namehcr'].replace(' PAYNE COUNTY BANK','PAYNE COUNTY BANK')
 
 # sys.exit()
 keep_cols = ['year', 'namehcr', 'rssdhcr', 'zipbr', 'sims_latitude','sims_longitude',
